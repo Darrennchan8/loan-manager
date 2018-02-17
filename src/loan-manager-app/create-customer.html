@@ -5,6 +5,7 @@
 <link rel="import" href="../../bower_components/iron-icon/iron-icon.html">
 <link rel="import" href="../../bower_components/iron-icons/iron-icons.html">
 <link rel="import" href="../../bower_components/iron-icons/social-icons.html">
+<link rel="import" href="../../bower_components/iron-icons/maps-icons.html">
 <link rel="import" href="../../bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
 <link rel="import" href="../../bower_components/paper-listbox/paper-listbox.html">
 <link rel="import" href="../../bower_components/paper-button/paper-button.html">
@@ -32,6 +33,7 @@
       }
       .fill > * {
         flex-grow: 1;
+        margin: 0 4px;
       }
       .fill > paper-button {
         flex-grow: initial;
@@ -39,25 +41,35 @@
       paper-dropdown-menu {
         cursor: default;
       }
+      .new-section {
+        margin: 16px 0;
+      }
+      #customers * {
+        margin: 8px 0;
+      }
     </style>
-    <paper-input id="name" label="Name" pattern="[A-z]+ [A-z]+" error-message="Please enter a valid full name." auto-validate value-changed="alert(this.value)">
+    <paper-input id="name" label="Name" pattern="[A-z]+ [A-z]+" error-message="Please enter a valid full name." auto-validate>
       <iron-icon icon="social:person" slot="prefix"></iron-icon>
     </paper-input>
-    <paper-input id="id" label="ID">
-      <iron-icon icon="create" slot="prefix"></iron-icon>
-    </paper-input>
-    <paper-input id="acct-num" label="Account Number" pattern="\d{16}" error-message="Please enter a valid account number." auto-validate>
-      <iron-icon icon="credit-card" slot="prefix"></iron-icon>
+    <paper-input id="street" label="Address" pattern="\d+ \w+ \w+( .+)*" error-message="Please enter a valid address." auto-validate>
+      <iron-icon icon="maps:directions" slot="prefix"></iron-icon>
     </paper-input>
     <div class="fill">
-      <paper-dropdown-menu id="account-type" label="Account Type">
-        <paper-listbox slot="dropdown-content" selected="0">
-          <paper-item>Checking</paper-item>
-          <paper-item>Saving</paper-item>
-          <paper-item>Credit Card</paper-item>
-        </paper-listbox>
-      </paper-dropdown-menu>
-      <paper-button id="submit" raised disabled>Submit</paper-button>
+      <paper-input id="city" label="City" pattern="[A-z]+" error-message="Please enter a valid city." auto-validate>
+        <iron-icon icon="maps:my-location" slot="prefix"></iron-icon>
+      </paper-input>
+      <paper-input id="state" label="State (Abbreviated)"  pattern="[A-z]{2}" error-message="Please enter a valid state code." auto-validate>
+        <iron-icon icon="maps:map" slot="prefix"></iron-icon>
+      </paper-input>
+    </div>
+    <div class="fill">
+      <paper-input id="zip" label="Zip Code" label="City" pattern="\d{5}" error-message="Please enter a valid zip code." auto-validate>
+        <iron-icon icon="maps:place" slot="prefix"></iron-icon>
+      </paper-input>
+      <paper-button id="submit">Submit</paper-button>
+    </div>
+    <div class="new-section">Customers IDs</div>
+    <div id="customers">
     </div>
   </template>
   <script>
@@ -68,24 +80,38 @@
     class CreateCustomer extends Polymer.Element {
       static get is() { return 'create-customer'; }
 
-      static get properties() {
-        return {
-          'selected': {
-            type: Number,
-            value: 0
+      refreshCustomerList() {
+        let xhr = new XMLHttpRequest();
+        xhr.open('GET', 'http://api.reimaginebanking.com/customers?key=5abdc83da97b9ff075692d3dd371b723', true);
+        xhr.send();
+        xhr.onload = function() {
+          let customers = this.shadowRoot.querySelector('#customers');
+          while (customers.children.length) {
+            customers.removeChild(customers.children[0]);
           }
-        };
+          let response = JSON.parse(xhr.responseText);
+          for (let customer of response) {
+            let span = document.createElement('div');
+            span.innerText = customer.first_name + " " + customer.last_name + ": " + customer._id;
+            customers.appendChild(span);
+          }
+        }.bind(this);
       }
 
       createCustomer(info) {
         let xhr = new XMLHttpRequest();
-        xhr.open('POST', `http://api.reimaginebanking.com/customers/${info.id}/accounts?key=5abdc83da97b9ff075692d3dd371b723`, true);
+        xhr.open('POST', 'http://api.reimaginebanking.com/customers?key=5abdc83da97b9ff075692d3dd371b723', true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
         xhr.send(JSON.stringify({
-          "type": info.type,
-          "nickname": info.name,
-          "rewards": 0,
-          "balance": 0,
-          "account_number": info.acctNum
+          'first_name': info.name.split(' ')[0],
+          'last_name': info.name.split(' ')[1],
+          'address': {
+            'street_number': info.street.split(' ')[0],
+            'street_name': info.street.split(' ').slice(1).join(' '),
+            'city': info.city,
+            'state': info.state,
+            'zip': info.zip
+          }
         }));
         return new Promise((resolve, reject) => {
           xhr.onload = function() {
@@ -99,25 +125,32 @@
 
       connectedCallback() {
         super.connectedCallback();
-        let [name, id, acctNum, type, button] = ['#name', '#id', '#acct-num', '#account-type', '#submit'].map(s => this.shadowRoot.querySelector(s));
-        [name, id, acctNum, type].forEach(e => e.onchange = s => {
-          button.disabled = !name.value || name.invalid || !id.value || id.invalid || !acctNum.value || acctNum.invalid || !type.value;
+        let [name, street, city, state, zip, button] = ['#name', '#street', '#city', '#state', '#zip', '#submit'].map(s => this.shadowRoot.querySelector(s));
+        [name, street, city, state, zip].forEach(e => e.onchange = s => {
+          button.disabled = !name.value || name.invalid
+            || !street.value || street.invalid
+            || !city.value || city.invalid
+            || !state.value || state.invalid
+            || !zip.value || zip.invalid;
         });
         button.addEventListener('click', e => {
-          name.disabled = id.disabled = acctNum.disabled = type.disabled = button.disabled = true;
+          name.disabled = street.disabled = city.disabled = state.disabled = zip.disabled = button.disabled = true;
           this.createCustomer({
-            type: type.value,
             name: name.value,
-            acctNum: acctNum.value,
-            id: id.value
+            street: street.value,
+            city: city.value,
+            state: state.value,
+            zip: zip.value
           }).then(o => {
             console.log(o);
+            name.disabled = street.disabled = city.disabled = state.disabled = zip.disabled = button.disabled = false;
+            this.refreshCustomerList();
           }).catch(e => {
             console.error(e);
-          }).finally(() => {
-            name.disabled = id.disabled = acctNum.disabled = type.disabled = button.disabled = true;
+            name.disabled = street.disabled = city.disabled = state.disabled = zip.disabled = button.disabled = false;
           })
         });
+        setTimeout(this.refreshCustomerList.bind(this), 0);
       }
     }
     window.customElements.define(CreateCustomer.is, CreateCustomer);

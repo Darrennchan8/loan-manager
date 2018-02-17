@@ -39,11 +39,14 @@
       paper-dropdown-menu {
         cursor: default;
       }
+      .new-section {
+        margin: 32px 0 8px 0;
+      }
     </style>
-    <paper-input id="name" label="Name" pattern="\w+ \w+( \w*)?" error-message="Please enter a valid full name." auto-validate value-changed="alert(this.value)">
+    <paper-input id="id" label="Customer ID">
       <iron-icon icon="social:person" slot="prefix"></iron-icon>
     </paper-input>
-    <paper-input id="id" label="ID">
+    <paper-input id="name" label="Account Name">
       <iron-icon icon="create" slot="prefix"></iron-icon>
     </paper-input>
     <paper-input id="acct-num" label="Account Number" pattern="\d{16}" error-message="Please enter a valid account number." auto-validate>
@@ -59,6 +62,14 @@
       </paper-dropdown-menu>
       <paper-button id="submit" raised disabled>Submit</paper-button>
     </div>
+    <div class="new-section">View Open Accounts</div>
+    <div class="fill">
+      <paper-input id="id-view" label="Customer ID">
+          <iron-icon icon="social:person" slot="prefix"></iron-icon>
+      </paper-input>
+      <paper-button id="view" raised disabled>View</paper-button>
+    </div>
+    <div id="results"></div>
   </template>
   <script>
     /**
@@ -68,26 +79,10 @@
     class CreateAccount extends Polymer.Element {
       static get is() { return 'create-account'; }
 
-      static get properties() {
-        return {
-          'selected': {
-            type: Number,
-            value: 0
-          }
-        };
-      }
-
       createAccount(info) {
         let xhr = new XMLHttpRequest();
         xhr.open('POST', `http://api.reimaginebanking.com/customers/${info.id}/accounts?key=5abdc83da97b9ff075692d3dd371b723`, true);
-        console.log(`http://api.reimaginebanking.com/customers/${info.id}/accounts?key=5abdc83da97b9ff075692d3dd371b723`);
-        console.log(JSON.stringify({
-          "type": info.type,
-          "nickname": info.name,
-          "rewards": 0,
-          "balance": 0,
-          "account_number": info.acctNum
-        }));
+        xhr.setRequestHeader('Content-Type', 'application/json');
         xhr.send(JSON.stringify({
           "type": info.type,
           "nickname": info.name,
@@ -105,6 +100,24 @@
         });
       }
 
+      printInfo(id) {
+        let xhr = new XMLHttpRequest();
+        xhr.open('GET', `http://api.reimaginebanking.com/customers/${id}/accounts?key=5abdc83da97b9ff075692d3dd371b723`, true);
+        xhr.send();
+        xhr.onload = function() {
+          let results = this.shadowRoot.querySelector('#results');
+          while (results.children.length) {
+            results.removeChild(results.children[0]);
+          }
+          let responses = JSON.parse(xhr.responseText);
+          for (let account of responses) {
+            let span = document.createElement('div');
+            span.innerText = account.nickname + ": " + account._id;
+            results.appendChild(span);
+          }
+        }.bind(this);
+      }
+
       connectedCallback() {
         super.connectedCallback();
         let [name, id, acctNum, type, button] = ['#name', '#id', '#acct-num', '#account-type', '#submit'].map(s => this.shadowRoot.querySelector(s));
@@ -120,11 +133,19 @@
             id: id.value
           }).then(o => {
             console.log(o);
+            name.disabled = id.disabled = acctNum.disabled = type.disabled = button.disabled = true;
           }).catch(e => {
             console.error(e);
-          }).finally(() => {
             name.disabled = id.disabled = acctNum.disabled = type.disabled = button.disabled = true;
-          })
+          });
+        });
+        let viewId = this.shadowRoot.querySelector('#id-view');
+        let viewBtn = this.shadowRoot.querySelector('#view');
+        viewId.onchange = s => {
+          viewBtn.disabled = !s;
+        };
+        viewBtn.addEventListener('click', e => {
+          this.printInfo(viewId.value);
         });
       }
     }

@@ -1,5 +1,13 @@
 <link rel="import" href="../../bower_components/neon-animation/web-animations.html">
 <link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../../bower_components/iron-icon/iron-icon.html">
+<link rel="import" href="../../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="../../bower_components/iron-icons/social-icons.html">
+<link rel="import" href="../../bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
+<link rel="import" href="../../bower_components/paper-listbox/paper-listbox.html">
+<link rel="import" href="../../bower_components/paper-button/paper-button.html">
 
 <dom-module id="request-loan">
   <template>
@@ -7,8 +15,107 @@
       :host {
         display: block;
       }
+      paper-button[disabled] {
+        background: initial;
+        color: initial;
+      }
+      paper-button {
+        background: #004977;
+        color: white;
+      }
+      iron-icon {
+        margin: 0 6px;
+      }
+      .fill {
+        display: flex;
+        align-items: center;
+      }
+      .fill > * {
+        flex-grow: 1;
+      }
+      .fill > paper-button {
+        flex-grow: initial;
+      }
+      paper-dropdown-menu {
+        cursor: default;
+      }
+      .new-section {
+        margin: 32px 0 8px 0;
+      }
     </style>
-    <h1>Request Loan</h1>
+    <div id="all">
+      <paper-input id="id" label="Account ID">
+      </paper-input>
+      <paper-input id="loan_amnt" label="Loan Amount">
+      </paper-input>
+      <paper-input id="term" label="Term">
+      </paper-input>
+      <paper-input id="int_rate" label="Initial Rate">
+      </paper-input>
+      <paper-input id="installment" label="Installment">
+      </paper-input>
+      <paper-input id="grade" label="Grade">
+      </paper-input>
+      <paper-dropdown-menu id="home_ownership" label="Home Ownership">
+        <paper-listbox slot="dropdown-content" selected="0">
+          <paper-item>RENT</paper-item>
+          <paper-item>MORGAGE</paper-item>
+          <paper-item>OWN</paper-item>
+          <paper-item>NONE</paper-item>
+          <paper-item>ANY</paper-item>
+        </paper-listbox>
+      </paper-dropdown-menu>
+      <paper-input id="annual_inc" label="Annual Income">
+      </paper-input>
+      <paper-dropdown-menu id="verification_status" label="Verification">
+        <paper-listbox slot="dropdown-content" selected="0">
+          <paper-item>Verified</paper-item>
+          <paper-item>Source Verified</paper-item>
+          <paper-item>Not Verified</paper-item>
+        </paper-listbox>
+      </paper-dropdown-menu>
+      <paper-dropdown-menu id="pymnt_plan" label="Payment Plan">
+        <paper-listbox slot="dropdown-content" selected="0">
+          <paper-item>Yes</paper-item>
+          <paper-item>No</paper-item>
+        </paper-listbox>
+      </paper-dropdown-menu>
+      <paper-input id="dti" label="Debt-to-income Ratio">
+      </paper-input>
+      <paper-input id="delinq_2yrs" label="Delinquencies in the past 2 years">
+      </paper-input>
+      <paper-input id="inq_last_6mths" label="Inquiries in the past 6 months">
+      </paper-input>
+      <paper-input id="open_acc" label="# Open Accounts">
+      </paper-input>
+      <paper-input id="revol_bal" label="Revolving Balance">
+      </paper-input>
+      <paper-input id="revol_util" label="Revolving Utilization">
+      </paper-input>
+      <paper-input id="total_acc" label="Total Account">
+      </paper-input>
+      <paper-input id="out_prncp" label="Output Principal">
+      </paper-input>
+      <paper-input id="out_prncp_inv" label="Output Principal Investment">
+      </paper-input>
+      <paper-input id="total_pymnt" label="Total Payment">
+      </paper-input>
+      <paper-input id="total_pymnt_inv" label="Total Payment Invoice">
+      </paper-input>
+      <paper-input id="total_rec_prncp" label="Total Recurring Principal">
+      </paper-input>
+      <paper-input id="total_rec_int" label="Total Recurring Interest">
+      </paper-input>
+      <paper-input id="total_rec_late_fee" label="Total Recurring Late Fees">
+      </paper-input>
+      <paper-input id="recoveries" label="Recoveries">
+      </paper-input>
+      <paper-input id="collection_recovery_fee" label="Collection Recovery Fee">
+      </paper-input>
+    </div>
+    <paper-button id="submit" raised>Submit</paper-button>
+    <div class="new-section">Status:</div>
+    <div id="results"></div>
   </template>
   <script>
       /**
@@ -17,9 +124,30 @@
        */
       class RequestLoan extends Polymer.Element {
         static get is() { return 'request-loan'; }
-        static get properties() {
-          return {
-          };
+        connectedCallback() {
+          super.connectedCallback();
+          let submit = this.shadowRoot.querySelector('#submit');
+          let results = this.shadowRoot.querySelector('#results');
+          submit.addEventListener('click', e => {
+            let body = {
+              x: []
+            };
+            let fields = Array.from(document.querySelector('#all').children);
+            fields.forEach(e => body.x.push(Number.isNaN(parseFloat(e.value)) ? e.value : parseFloat(e.value)));
+            let xhr = new XMLHttpRequest();
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.open('POST', 'http://127.0.0.1:5000/api/predict', true);
+            xhr.send(JSON.stringify(body));
+            xhr.onload = x => {
+              if (JSON.parse(x).y) {
+                // They don't get the loan
+                results.innerText = 'Loan declined!';
+              } else {
+                // They get the loan
+                results.innerText = 'Loan accepted!';
+              }
+            };
+          });
         }
       }
       window.customElements.define(RequestLoan.is, RequestLoan);
