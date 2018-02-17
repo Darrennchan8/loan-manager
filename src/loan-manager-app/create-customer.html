@@ -1,0 +1,125 @@
+<link rel="import" href="../../bower_components/neon-animation/web-animations.html">
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../../bower_components/iron-icon/iron-icon.html">
+<link rel="import" href="../../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="../../bower_components/iron-icons/social-icons.html">
+<link rel="import" href="../../bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
+<link rel="import" href="../../bower_components/paper-listbox/paper-listbox.html">
+<link rel="import" href="../../bower_components/paper-button/paper-button.html">
+
+<dom-module id="create-customer">
+  <template>
+    <style>
+      :host {
+        display: block;
+      }
+      paper-button[disabled] {
+        background: initial;
+        color: initial;
+      }
+      paper-button {
+        background: #004977;
+        color: white;
+      }
+      iron-icon {
+        margin: 0 6px;
+      }
+      .fill {
+        display: flex;
+        align-items: center;
+      }
+      .fill > * {
+        flex-grow: 1;
+      }
+      .fill > paper-button {
+        flex-grow: initial;
+      }
+      paper-dropdown-menu {
+        cursor: default;
+      }
+    </style>
+    <paper-input id="name" label="Name" pattern="[A-z]+ [A-z]+" error-message="Please enter a valid full name." auto-validate value-changed="alert(this.value)">
+      <iron-icon icon="social:person" slot="prefix"></iron-icon>
+    </paper-input>
+    <paper-input id="id" label="ID">
+      <iron-icon icon="create" slot="prefix"></iron-icon>
+    </paper-input>
+    <paper-input id="acct-num" label="Account Number" pattern="\d{16}" error-message="Please enter a valid account number." auto-validate>
+      <iron-icon icon="credit-card" slot="prefix"></iron-icon>
+    </paper-input>
+    <div class="fill">
+      <paper-dropdown-menu id="account-type" label="Account Type">
+        <paper-listbox slot="dropdown-content" selected="0">
+          <paper-item>Checking</paper-item>
+          <paper-item>Saving</paper-item>
+          <paper-item>Credit Card</paper-item>
+        </paper-listbox>
+      </paper-dropdown-menu>
+      <paper-button id="submit" raised disabled>Submit</paper-button>
+    </div>
+  </template>
+  <script>
+    /**
+     * @customElement
+     * @polymer
+     */
+    class CreateCustomer extends Polymer.Element {
+      static get is() { return 'create-customer'; }
+
+      static get properties() {
+        return {
+          'selected': {
+            type: Number,
+            value: 0
+          }
+        };
+      }
+
+      createCustomer(info) {
+        let xhr = new XMLHttpRequest();
+        xhr.open('POST', `http://api.reimaginebanking.com/customers/${info.id}/accounts?key=5abdc83da97b9ff075692d3dd371b723`, true);
+        xhr.send(JSON.stringify({
+          "type": info.type,
+          "nickname": info.name,
+          "rewards": 0,
+          "balance": 0,
+          "account_number": info.acctNum
+        }));
+        return new Promise((resolve, reject) => {
+          xhr.onload = function() {
+            resolve(JSON.parse(xhr.responseText));
+          };
+          xhr.onerror = function() {
+            reject(JSON.parse(xhr.responseText));
+          }
+        });
+      }
+
+      connectedCallback() {
+        super.connectedCallback();
+        let [name, id, acctNum, type, button] = ['#name', '#id', '#acct-num', '#account-type', '#submit'].map(s => this.shadowRoot.querySelector(s));
+        [name, id, acctNum, type].forEach(e => e.onchange = s => {
+          button.disabled = !name.value || name.invalid || !id.value || id.invalid || !acctNum.value || acctNum.invalid || !type.value;
+        });
+        button.addEventListener('click', e => {
+          name.disabled = id.disabled = acctNum.disabled = type.disabled = button.disabled = true;
+          this.createCustomer({
+            type: type.value,
+            name: name.value,
+            acctNum: acctNum.value,
+            id: id.value
+          }).then(o => {
+            console.log(o);
+          }).catch(e => {
+            console.error(e);
+          }).finally(() => {
+            name.disabled = id.disabled = acctNum.disabled = type.disabled = button.disabled = true;
+          })
+        });
+      }
+    }
+    window.customElements.define(CreateCustomer.is, CreateCustomer);
+  </script>
+</dom-module>

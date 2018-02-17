@@ -1,0 +1,109 @@
+<link rel="import" href="../../bower_components/neon-animation/web-animations.html">
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../bower_components/app-layout/app-layout.html">
+<link rel="import" href="../../bower_components/app-layout/app-header/app-header.html">
+<link rel="import" href="../../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../../bower_components/paper-item/paper-item.html">
+<link rel="import" href="../../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="../../bower_components/iron-icons/editor-icons.html">
+<link rel="import" href="../../bower_components/iron-icons/social-icons.html">
+<link rel="import" href="../../bower_components/iron-pages/iron-pages.html">
+<link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="create-account.html">
+<link rel="import" href="request-loan.html">
+
+<dom-module id="loan-manager-app">
+  <template>
+    <style>
+      app-header, app-drawer {
+        z-index: 1;
+        cursor: default;
+      }
+      :host {
+        display: block;
+      }
+      app-toolbar {
+        background: #004977;
+        color: white;
+      }
+      div[main-title] {
+        margin-left: 24px;
+      }
+      .menu-item iron-icon {
+        margin: 0 6px;
+      }
+      .small {
+        width: 50vw;
+      }
+      .center {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        margin: 16px;
+      }
+    </style>
+    <app-header reveals>
+      <app-toolbar>
+        <paper-icon-button icon="menu"></paper-icon-button>
+        <div main-title>
+          <iron-pages selected="{{selected}}">
+            <span>Create Customer</span>
+            <span>Create Account</span>
+            <span>Request Loan</span>
+          </iron-pages>
+        </div>
+      </app-toolbar>
+    </app-header>
+    <app-drawer id="drawer" swipe-open>
+      <paper-item class="menu-item"><iron-icon icon="social:person-add"></iron-icon><span>Create Customer</span></paper-item>
+      <paper-item class="menu-item"><iron-icon icon="account-box"></iron-icon><span>Create Account</span></paper-item>
+      <paper-item class="menu-item"><iron-icon icon="editor:attach-money"></iron-icon><span>Request Loan</span></paper-item>
+    </app-drawer>
+    <div class="center">
+      <div class="container flex small">
+        <iron-pages selected="{{selected}}">
+          <create-account></create-account>
+          <request-loan></request-loan>
+        </iron-pages>
+      </div>
+    </div>
+  </template>
+
+  <script>
+    /**
+     * @customElement
+     * @polymer
+     */
+    class LoanManagerApp extends Polymer.Element {
+      static get is() { return 'loan-manager-app'; }
+      ready() {
+        super.ready();
+        this.selected = 0;
+        let appDrawer = this.shadowRoot.querySelector('app-drawer');
+        this.shadowRoot.querySelector('paper-icon-button')
+          .addEventListener('click', e => appDrawer.toggle());
+        Array.from(this.shadowRoot.querySelectorAll('.menu-item')).forEach((e, i) => {
+          e.addEventListener('click', evt => {
+            appDrawer.toggle();
+            this.selected = i;
+          });
+        });
+      }
+      selectedChanged() {
+        console.log.apply(arguments);
+      }
+      static get properties() {
+        return {
+          'selected': {
+            type: Number,
+            reflectToAttribute: true,
+            notify: true,
+            value: 0
+          }
+        };
+      }
+    }
+
+    window.customElements.define(LoanManagerApp.is, LoanManagerApp);
+  </script>
+</dom-module>

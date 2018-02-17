@@ -1,0 +1,7 @@
+{
+  "name": "loan-manager",
+  "short_name": "loan-manager",
+  "description": "A loan management system using Capital One&#39;s Hackathon API",
+  "start_url": "/",
+  "display": "standalone"
+}

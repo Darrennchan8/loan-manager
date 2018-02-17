@@ -1,0 +1,27 @@
+<link rel="import" href="../../bower_components/neon-animation/web-animations.html">
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+
+<dom-module id="request-loan">
+  <template>
+    <style>
+      :host {
+        display: block;
+      }
+    </style>
+    <h1>Request Loan</h1>
+  </template>
+  <script>
+      /**
+       * @customElement
+       * @polymer
+       */
+      class RequestLoan extends Polymer.Element {
+        static get is() { return 'request-loan'; }
+        static get properties() {
+          return {
+          };
+        }
+      }
+      window.customElements.define(RequestLoan.is, RequestLoan);
+  </script>
+</dom-module>
