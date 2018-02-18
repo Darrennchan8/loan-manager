@@ -43,9 +43,9 @@
         margin: 32px 0 8px 0;
       }
     </style>
+    <paper-input id="id" label="Account ID">
+    </paper-input>
     <div id="all">
-      <paper-input id="id" label="Account ID">
-      </paper-input>
       <paper-input id="loan_amnt" label="Loan Amount">
       </paper-input>
       <paper-input id="term" label="Term">
@@ -54,8 +54,17 @@
       </paper-input>
       <paper-input id="installment" label="Installment">
       </paper-input>
-      <paper-input id="grade" label="Grade">
-      </paper-input>
+      <paper-dropdown-menu id="grade" label="Grade">
+        <paper-listbox slot="dropdown-content" selected="0">
+          <paper-item>A</paper-item>
+          <paper-item>B</paper-item>
+          <paper-item>C</paper-item>
+          <paper-item>D</paper-item>
+          <paper-item>E</paper-item>
+          <paper-item>F</paper-item>
+          <paper-item>G</paper-item>
+        </paper-listbox>
+      </paper-dropdown-menu>
       <paper-dropdown-menu id="home_ownership" label="Home Ownership">
         <paper-listbox slot="dropdown-content" selected="0">
           <paper-item>RENT</paper-item>
@@ -132,19 +141,19 @@
             let body = {
               x: []
             };
-            let fields = Array.from(document.querySelector('#all').children);
+            let fields = Array.from(this.shadowRoot.querySelector('#all').children);
             fields.forEach(e => body.x.push(Number.isNaN(parseFloat(e.value)) ? e.value : parseFloat(e.value)));
             let xhr = new XMLHttpRequest();
-            xhr.setRequestHeader('Content-Type', 'application/json');
             xhr.open('POST', 'http://127.0.0.1:5000/api/predict', true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
             xhr.send(JSON.stringify(body));
             xhr.onload = x => {
-              if (JSON.parse(x).y) {
-                // They don't get the loan
-                results.innerText = 'Loan declined!';
-              } else {
+              if (JSON.parse(xhr.responseText).y) {
                 // They get the loan
                 results.innerText = 'Loan accepted!';
+              } else {
+                // They don't get the loan
+                results.innerText = 'Loan declined!';
               }
             };
           });
