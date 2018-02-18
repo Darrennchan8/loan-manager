@@ -122,9 +122,22 @@
       <paper-input id="collection_recovery_fee" label="Collection Recovery Fee">
       </paper-input>
     </div>
-    <paper-button id="submit" raised>Submit</paper-button>
-    <div class="new-section">Status:</div>
-    <div id="results"></div>
+    <div class="fill">
+      <paper-dropdown-menu id="loan-type" label="Loan Type">
+        <paper-listbox slot="dropdown-content" selected="0">
+          <paper-item>home</paper-item>
+          <paper-item>auto</paper-item>
+          <paper-item>small business</paper-item>
+        </paper-listbox>
+      </paper-dropdown-menu>
+      <paper-button id="submit" raised>Submit</paper-button>
+    </div>
+    <div class="new-section" id="results"></div>
+    <div class="new-section">
+      <paper-input id="account-id-view" label="Account ID"></paper-input>
+      <paper-button id="view-loans" raised>View Loans</paper-button>
+    </div>
+    <div class="new-section" id="results-view"></div>
   </template>
   <script>
       /**
@@ -133,14 +146,18 @@
        */
       class RequestLoan extends Polymer.Element {
 
-        makeLoan() {
+        makeLoan(info) {
+          console.log(info);
+          let xhr = new XMLHttpRequest();
+          xhr.open('POST', `http://api.reimaginebanking.com/accounts/${this.shadowRoot.querySelector('#account-id-view').value}/loans?key=5abdc83da97b9ff075692d3dd371b723`, true);
+          xhr.setRequestHeader('Content-Type', 'application/json');
+          xhr.send(JSON.stringify(info));
         }
 
         static get is() { return 'request-loan'; }
         connectedCallback() {
           super.connectedCallback();
-          let submit = this.shadowRoot.querySelector('#submit');
-          let results = this.shadowRoot.querySelector('#results');
+          let [submit, results, loanType, viewLoans] = ['#submit', '#results', '#loan-type', '#view-loans'].map(s => this.shadowRoot.querySelector(s));
           submit.addEventListener('click', e => {
             let body = {
               x: []
@@ -154,13 +171,41 @@
             xhr.onload = x => {
               if (JSON.parse(xhr.responseText).y) {
                 // They get the loan
-                results.innerText = 'Loan accepted!';
+                results.innerText = 'Status: Loan accepted!';
+                this.makeLoan({
+                  'type': loanType.value,
+                  'status': 'approved',
+                  'credit_score': 500,
+                  'monthly_payment': parseInt(this.shadowRoot.querySelector('#out_prncp').value),
+                  'amount': parseInt(this.shadowRoot.querySelector('#loan_amnt').value)
+                });
               } else {
                 // They don't get the loan
-                results.innerText = 'Loan declined!';
+                results.innerText = 'Status: Loan declined!';
+                this.makeLoan({
+                  'type': loanType.value,
+                  'status': 'declined',
+                  'credit_score': 500,
+                  'monthly_payment': parseInt(this.shadowRoot.querySelector('#out_prncp').value),
+                  'amount': parseInt(this.shadowRoot.querySelector('#loan_amnt').value)
+                });
               }
             };
           });
+          viewLoans.addEventListener('click', e => {
+            let xhr = new XMLHttpRequest();
+            xhr.open('GET', `http://api.reimaginebanking.com/accounts/${this.shadowRoot.querySelector('#account-id-view').value}/loans?key=5abdc83da97b9ff075692d3dd371b723`, true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.send();
+            xhr.onload = function() {
+              let loans = this.shadowRoot.querySelector('#results-view');
+              JSON.parse(xhr.responseText).map(o => o.type + ": " + o.amount + " - " + o.status).forEach(s => {
+                let a = document.createElement('div');
+                a.innerText = s;
+                loans.appendChild(a);
+              });
+            }.bind(this);
+          })
         }
       }
       window.customElements.define(RequestLoan.is, RequestLoan);

@@ -133,10 +133,10 @@
             id: id.value
           }).then(o => {
             console.log(o);
-            name.disabled = id.disabled = acctNum.disabled = type.disabled = button.disabled = true;
+            name.disabled = id.disabled = acctNum.disabled = type.disabled = button.disabled = false;
           }).catch(e => {
             console.error(e);
-            name.disabled = id.disabled = acctNum.disabled = type.disabled = button.disabled = true;
+            name.disabled = id.disabled = acctNum.disabled = type.disabled = button.disabled = false;
           });
         });
         let viewId = this.shadowRoot.querySelector('#id-view');

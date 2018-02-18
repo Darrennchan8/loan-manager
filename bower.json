@@ -17,7 +17,8 @@
     "iron-icon": "^2.0.1",
     "paper-toolbar": "^2.1.0",
     "app-layout": "^2.0.5",
-    "iron-flex-layout": "^2.0.3"
+    "iron-flex-layout": "^2.0.3",
+    "iron-pages": "^2.1.0"
   },
   "devDependencies": {
     "web-component-tester": "Polymer/web-component-tester#^6.0.0",
